@@ -2,6 +2,8 @@ import numpy as np
 from collections import namedtuple
 import random
 
+np.set_printoptions(suppress=True, formatter={'float_kind':'{:0.1f}'.format})
+
 
 def load_problem(filename):
     """
@@ -224,24 +226,15 @@ def cost_function(Solution, problem):
     return TotalCost
 
 def precompute_compatibility(problem):
-    """
-    Precompute a lookup table where for each call (indexed 0 to n_calls-1),
-    we store a list of vehicles (0-indexed) that are compatible with that call.
-    
-    Parameters:
-        problem (dict): Must contain 'n_calls', 'n_vehicles', and 'VesselCargo'.
-        
-    Returns:
-        list of np.ndarray: A list where each element is an array of compatible vehicle indices for that call.
-    """
-    num_calls = problem['n_calls']
     vessel_cargo = problem['VesselCargo']  # shape: (n_vehicles, n_calls)
-    compatibility_list = []
-    for call in range(num_calls):
-        # For call 'call+1', find vehicles where vessel_cargo is 1.
-        compatible_vehicles = np.where(vessel_cargo[:, call] == 1)[0]
-        compatibility_list.append(compatible_vehicles)
-    return compatibility_list
+    # Transpose so rows are calls and columns are vehicles.
+    compatibility_matrix = vessel_cargo.T
+    # Create a dummy column with ones (meaning every call is compatible with the dummy vehicle)
+    dummy_col = np.ones((compatibility_matrix.shape[0], 1), dtype=compatibility_matrix.dtype)
+    # Append the dummy column to the compatibility matrix along the columns.
+    compatibility_matrix = np.concatenate((compatibility_matrix, dummy_col), axis=1)
+    
+    return compatibility_matrix
 
 # Random solution generator function
 def random_solution(problem, compatibility_list):
@@ -307,3 +300,49 @@ def initial_solution_generator(problem):
         solution.append(i)
 
     return solution
+
+problem = load_problem('Data/Call_7_Vehicle_3.txt')
+# print(feasibility_check([4, 4, 18, 17, 18, 17, 0, 8, 14, 14, 8, 0, 6, 9, 6, 5, 9, 5, 12, 16, 16, 12, 0, 7, 7, 3, 3, 10, 10, 0, 1, 1, 0, 13, 13, 11, 11, 15, 15, 2, 2], problem))
+
+# print(precompute_compatibility(problem))
+
+# print(problem.keys())
+
+# Cargo gives all the call information for a specific vehicle. Below gives
+# Information on call one start node
+# print(problem['Cargo'][0][0])
+
+# Travel time gives a matrix for car i starting at node j
+# Below we get the travel time of car 3 starting at node 2
+# print(problem['TravelTime'][2][1])
+
+# First travel time prints time it takes from vehicles start node to all the
+# possible first moves. Below we get the list for vehicle 1 who has start node 8
+# print(problem['FirstTravelTime'][0])
+
+# The capacity of each car. 
+# print(problem["VesselCapacity"])
+
+# Gives the time at origin node of loading the cargo of a specific call.
+# For example vehicle 1 uses 29 units to load call 2. -1 when call is incompatible
+# print(problem['LoadingTime'])
+
+# Gives the time at destination node for a specific call to unload the cargo.
+# print(problem['UnloadingTime'])
+
+# Vessel cargo gives a matrix of 0s and 1s where a 1 indicates that a vehicle
+# is compatible with a specific call. Below prints comp.list for vehicle 1.
+# print(problem['VesselCargo'][0])
+
+# Travel cost gives a matrix where each number represents the cost of travelling
+# from a node to another. Below gives for car 1 all the cost starting at node 1
+# going to any of the 39 other nodes.
+# print(problem['TravelCost'][0][0][16])
+
+# Frist travel cost gives the cost of going from the vehicles start node to 
+# any of the first possible moves. Below gives the matrix for vehicle 1.
+# print(problem['FirstTravelCost'][0])
+
+# Port cost gives the sum of origin node cost and destionation node cost for 
+# each vehicle, so below are the port costs for vehicle 1 for all the calls
+# print(problem['PortCost'][0])
